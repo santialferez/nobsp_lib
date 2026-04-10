@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nobsp_lib"
+version = "0.1.0"
+description = "Self-contained public tabular and vision APIs for NObSP."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Santiago Alferez"},
+]
+maintainers = [
+    {name = "Santiago Alferez"},
+]
+dependencies = [
+    "matplotlib>=3.8",
+    "numpy>=1.24",
+    "pillow>=10.0",
+    "scikit-learn>=1.3",
+    "torch>=2.1",
+    "torchvision>=0.16",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
