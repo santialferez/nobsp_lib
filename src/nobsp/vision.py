@@ -17,6 +17,13 @@ from .utils.validation import check_is_fitted
 from .utils.device import auto_detect_device
 
 
+def _unwrap_archive_scalar(value: Any) -> Any:
+    """Return the scalar object stored in a 0-D numpy archive field."""
+    if isinstance(value, np.ndarray) and value.shape == ():
+        return value.item()
+    return value
+
+
 class NObSPVision:
     """
     Neural Oblique Subspace Projections for CNN interpretability.
@@ -438,15 +445,14 @@ class NObSPVision:
         # Load the saved data
         with np.load(str(filepath), allow_pickle=True) as data:
             if 'method' in data:
-                self.method = str(data['method'])
+                self.method = str(_unwrap_archive_scalar(data['method']))
             if 'regularization' in data:
-                self.regularization = float(data['regularization'])
+                self.regularization = float(_unwrap_archive_scalar(data['regularization']))
             if 'target_layer' in data:
-                self.target_layer = (
-                    str(data['target_layer']) if data['target_layer'] is not None else None
-                )
+                loaded_target_layer = _unwrap_archive_scalar(data['target_layer'])
+                self.target_layer = None if loaded_target_layer is None else str(loaded_target_layer)
             if 'flatten_strategy' in data:
-                loaded_strategy = str(data['flatten_strategy'])
+                loaded_strategy = str(_unwrap_archive_scalar(data['flatten_strategy']))
                 if loaded_strategy in {'channel', 'element'}:
                     self.flatten_strategy = loaded_strategy
                 else:
@@ -454,7 +460,7 @@ class NObSPVision:
                         f"Unknown flatten_strategy '{loaded_strategy}' in saved model; keeping current value '{self.flatten_strategy}'."
                     )
             if 'decomposition_space' in data:
-                loaded_space = str(data['decomposition_space'])
+                loaded_space = str(_unwrap_archive_scalar(data['decomposition_space']))
                 if loaded_space in {"hidden", "classifier_input"}:
                     self.decomposition_space = loaded_space
                 else:
