@@ -81,20 +81,27 @@ def build_forward_model(
             parts = self.start_layer_name.split('.')
             
             # Determine which layers come after the cut
-            layer_num = int(parts[0][-1]) if parts[0].startswith('layer') else -1
-            
+            stage_name = parts[0]
+            layer_num = int(stage_name[-1]) if stage_name.startswith('layer') else -1
+
             if layer_num >= 0:
                 # Build convolutional layers after the cut
                 self.conv_layers = nn.Sequential()
-                
-                # If cutting within a layer, need to handle partial blocks
-                if len(parts) > 1:
-                    # Cutting within a layer - more complex handling needed
-                    # For now, we'll start from the next full layer
-                    layer_num += 1
-                
-                # Add subsequent layer blocks
-                for i in range(layer_num, 5):  # ResNet has layer1-4
+
+                next_stage_num = layer_num + 1
+
+                # If the cut is at or inside a specific block, keep the remainder of
+                # the current stage instead of skipping directly to the next stage.
+                if len(parts) > 1 and parts[1].isdigit():
+                    block_idx = int(parts[1])
+                    current_stage = getattr(self.full_model, stage_name)
+                    remaining_blocks = list(current_stage.children())[block_idx + 1:]
+                    if remaining_blocks:
+                        stage_tail = nn.Sequential(*remaining_blocks)
+                        self.conv_layers.add_module(stage_name, stage_tail)
+
+                # Add subsequent full stages.
+                for i in range(next_stage_num, 5):  # ResNet has layer1-4
                     if i <= 4 and hasattr(self.full_model, f'layer{i}'):
                         self.conv_layers.add_module(
                             f'layer{i}', 
@@ -351,8 +358,8 @@ def decompose_alpha_cnn(
                 
             except Exception as e:
                 print(f"Warning: Failed to compute alpha for channel {i}, class {j}: {e}")
-                # Set to zero in the correct position
-                Alpha[:, coef_idx] = 0
+                # Set the failing class slice to zero and keep calibrating.
+                Alpha[i, j*hidden_size:(j+1)*hidden_size] = 0
                 contributions[:, i, j] = 0
     
     return to_numpy(Alpha), contributions

@@ -600,8 +600,16 @@ class NObSPCAM:
         with torch.no_grad():
             for batch_idx, batch in enumerate(calibration_loader):
                 if isinstance(batch, dict):
-                    images = batch.get("images") or batch.get("image")
-                    targets = batch.get("labels") or batch.get("label")
+                    images = batch.get("images")
+                    if images is None:
+                        images = batch.get("image")
+                    targets = batch.get("labels")
+                    if targets is None:
+                        targets = batch.get("label")
+                    if images is None:
+                        raise ValueError(
+                            "Calibration dict batches must include an 'images' or 'image' entry."
+                        )
                 elif isinstance(batch, (list, tuple)):
                     if len(batch) < 2:
                         raise ValueError(

@@ -171,11 +171,11 @@ def decompose_alpha(
                 else:
                     _, X_target_sub = model(X_target)
             
-            # Store uncentered feature-specific transformation  
-            Z_features[:, :, i] = X_target_sub
-            
             # Center the transformation
             X_target_sub_centered = X_target_sub - torch.mean(X_target_sub, dim=0)
+
+            # Apply alpha coefficients in the same centered feature space used for fitting.
+            Z_features[:, :, i] = X_target_sub_centered
             
             # Target: basic method's projections for this feature-output combination
             y_target_basic = to_tensor(contributions_basic[:, i, l].reshape(-1, 1), device)
